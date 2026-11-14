@@ -6,6 +6,7 @@ from models.order_item import OrderItem
 from services.product_service import ProductService
 from decimal import Decimal
 from services.inventory_services import InventoryService
+from exceptions.business import NotFoundError, ValidationError, ConflictError
 
 class OrderService():
     def __init__(self, session: Session) -> None:
@@ -15,7 +16,7 @@ class OrderService():
         supplier = SupplierService(self.session).get_supplier(supplier_id)
 
         if not supplier: 
-            raise ValueError("Supplier does not exist")
+            raise NotFoundError("Supplier does not exist")
 
         order = Order()
         order.supplier = supplier
@@ -37,25 +38,25 @@ class OrderService():
         order = self.get_order(order_id)
         
         if not order: 
-            raise ValueError("Order does not exist")
+            raise NotFoundError("Order does not exist")
 
         if order.status != "pending":
-            raise ValueError("Order status is not pending")
+            raise ConflictError("Order status is not pending")
 
         product = ProductService(self.session).get_product(sku)
 
         if not product:
-            raise ValueError("Product cannot be found")
+            raise NotFoundError("Product cannot be found")
         
         if not product in order.supplier.products:
-            raise ValueError("Product is not in list of orders")
+            raise NotFoundError("Product is not in list of orders")
 
         if quantity < 1:
-            raise ValueError("Quantity cannot be less than zero")
+            raise ValidationError("Quantity cannot be less than zero")
 
         for item in order.items:
             if item.product_id == product.id:
-                raise ValueError("Product already exist in that Order")
+                raise ConflictError("Product already exist in that Order")
 
         order_item = OrderItem()
 
@@ -73,7 +74,7 @@ class OrderService():
         order = self.get_order(order_id)
 
         if not order: 
-            raise ValueError("Order does not exist")
+            raise NotFoundError("Order does not exist")
 
         total = Decimal("0.00")
 
@@ -86,13 +87,13 @@ class OrderService():
         order = self.get_order(order_id)
 
         if not order: 
-            raise ValueError("Order does not exist")
+            raise NotFoundError("Order does not exist")
 
         if not order.items: 
-            raise ValueError("There is no items in the given order")
+            raise NotFoundError("There is no items in the given order")
 
         if order.status != "pending":
-            raise ValueError("Only pending orders can be completed")
+            raise ConflictError("Only pending orders can be completed")
 
         product_service = ProductService(self.session)    
         inventory_service = InventoryService(self.session, product_service)
@@ -108,10 +109,10 @@ class OrderService():
         order = self.get_order(order_id)
 
         if not order: 
-            raise ValueError("Order does not exist")
+            raise NotFoundError("Order does not exist")
 
         if order.status != "pending":
-            raise ValueError("Only pending orders can be cancelled")
+            raise ConflictError("Only pending orders can be cancelled")
 
         order.status = "cancelled"
 

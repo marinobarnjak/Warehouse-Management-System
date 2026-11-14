@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from models.supplier import Supplier
 from sqlalchemy import select
 from services.product_service import ProductService
+from exceptions.business import NotFoundError, ValidationError, ConflictError
 
 class SupplierService():
     def __init__(self, session: Session) -> None:
@@ -21,7 +22,7 @@ class SupplierService():
         name = name.strip()
 
         if not name:
-            raise ValueError("Name cannot be empty")
+            raise NotFoundError("Name cannot be empty")
 
         supplier = Supplier()
         supplier.name = name
@@ -42,9 +43,9 @@ class SupplierService():
         product = product.get_product(sku)
 
         if not supplier:
-            raise ValueError("Supplier does not exist")
+            raise NotFoundError("Supplier does not exist")
         if not product:
-            raise ValueError("Product does not exist")
+            raise NotFoundError("Product does not exist")
 
         if product not in supplier.products:
             supplier.products.append(product)

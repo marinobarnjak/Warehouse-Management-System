@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from models.product import Product
 from services.product_service import ProductService
 from models.stock_movement import StockMovement
+from exceptions.business import NotFoundError, ValidationError, ConflictError
 
 class InventoryService():
 
@@ -13,13 +14,13 @@ class InventoryService():
     def receive_stock(self, sku: str, quantity: int) -> StockMovement:
     
         if quantity < 1:
-            raise ValueError("Quantity must be greater than zero")
+            raise ValidationError("Quantity must be greater than zero")
 
         stmt = select(Product).where(Product.sku == sku).with_for_update().execution_options(populate_existing=True)
         product = self.session.scalar(stmt)
 
         if not product:
-            raise ValueError("Product with given SKU does not exist")
+            raise ValidationError("Product with given SKU does not exist")
         
         product.quantity += quantity
 
@@ -35,16 +36,16 @@ class InventoryService():
     def issue_stock(self, sku: str, quantity: int) -> StockMovement:
 
         if quantity < 1:
-            raise ValueError("Quantity must be greater than zero")
+            raise ValidationError("Quantity must be greater than zero")
         
         stmt = select(Product).where(Product.sku == sku).with_for_update().execution_options(populate_existing=True)
         product = self.session.scalar(stmt)
 
         if not product:
-            raise ValueError("Product with given SKU does not exist")
+            raise NotFoundError("Product with given SKU does not exist")
 
         if quantity > product.quantity:
-            raise ValueError("Insufficient stock")
+            raise ConflictError("Insufficient stock")
 
         product.quantity -= quantity
 
@@ -61,7 +62,7 @@ class InventoryService():
         product = self.product_service.get_product(sku)
         
         if not product:
-            raise ValueError("Product with given SKU does not exist")
+            raise NotFoundError("Product with given SKU does not exist")
 
         return product.quantity
 
@@ -69,7 +70,7 @@ class InventoryService():
         product = self.product_service.get_product(sku)
 
         if not product:
-            raise ValueError("Product with given SKU does not exist")
+            raise NotFoundError("Product with given SKU does not exist")
 
         return product.quantity < product.min_stock
 
