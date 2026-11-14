@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from models.product_suppliers import product_suppliers
 from services.product_service import ProductService
 from services.supplier_service import SupplierService
-
+from exceptions.business import NotFoundError
 
 @pytest.fixture
 def supplier_service(db_session: Session):
@@ -159,7 +159,7 @@ def test_add_nonexistent_supplier(supplier_service, db_session: Session):
     )
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NotFoundError):
         supplier_service.add_product_to_supplier(-1, "SUP-NO-SUPPLIER")
 
 
@@ -167,7 +167,7 @@ def test_add_nonexistent_product(supplier_service, db_session: Session):
     supplier = supplier_service.create_supplier("Supplier A")
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NotFoundError):
         supplier_service.add_product_to_supplier(
             supplier.id, "NONEXISTENT-SKU"
         )

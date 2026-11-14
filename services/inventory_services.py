@@ -20,7 +20,7 @@ class InventoryService():
         product = self.session.scalar(stmt)
 
         if not product:
-            raise ValidationError("Product with given SKU does not exist")
+            raise NotFoundError("Product with given SKU does not exist")
         
         product.quantity += quantity
 

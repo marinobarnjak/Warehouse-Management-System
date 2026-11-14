@@ -49,7 +49,7 @@ class OrderService():
             raise NotFoundError("Product cannot be found")
         
         if not product in order.supplier.products:
-            raise NotFoundError("Product is not in list of orders")
+            raise ConflictError("Product is not in list of orders")
 
         if quantity < 1:
             raise ValidationError("Quantity cannot be less than zero")
@@ -90,7 +90,7 @@ class OrderService():
             raise NotFoundError("Order does not exist")
 
         if not order.items: 
-            raise NotFoundError("There is no items in the given order")
+            raise ConflictError("There is no items in the given order")
 
         if order.status != "pending":
             raise ConflictError("Only pending orders can be completed")

@@ -1,5 +1,5 @@
 
-class BusinnesError(ValueError):
+class BusinnesError(Exception):
     pass
 
 class NotFoundError(BusinnesError):

@@ -6,7 +6,7 @@ from models.product import Product
 from models.stock_movement import StockMovement
 from services.product_service import ProductService
 from services.inventory_services import InventoryService
-
+from exceptions.business import NotFoundError, ValidationError, ConflictError
 
 @pytest.fixture
 def inventory(db_session: Session):
@@ -44,7 +44,7 @@ def test_issue_stock(inventory, db_session: Session):
 
 @pytest.mark.parametrize("quantity", [0, -1, -10])
 def test_receive_invalid_quantity(inventory, quantity):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         inventory.receive_stock("INV-LAPTOP-001", quantity)
 
 
@@ -52,14 +52,14 @@ def test_receive_invalid_quantity(inventory, quantity):
 def test_issue_invalid_quantity(inventory, quantity):
     inventory.receive_stock("INV-LAPTOP-001", 10)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         inventory.issue_stock("INV-LAPTOP-001", quantity)
 
 
 def test_issue_insufficient_stock(inventory):
     inventory.receive_stock("INV-LAPTOP-001", 5)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         inventory.issue_stock("INV-LAPTOP-001", 10)
 
     assert inventory.get_stock("INV-LAPTOP-001") == 5
@@ -141,5 +141,5 @@ def test_stock_movement_history(inventory, db_session: Session):
 def test_nonexistent_product(inventory, method):
     operation = getattr(inventory, method)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NotFoundError):
         operation("NONEXISTENT-SKU", 5)

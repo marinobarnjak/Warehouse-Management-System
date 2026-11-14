@@ -3,6 +3,8 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from services.product_service import ProductService
+from exceptions.business import ValidationError
+
 
 def test_create_product(db_session: Session):
     service = ProductService(db_session)
@@ -38,7 +40,7 @@ def test_create_product_invalid_params(
 ):
     service = ProductService(db_session)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         service.create_product(name, sku, price, min_stock)
 
 

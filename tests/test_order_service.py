@@ -8,6 +8,7 @@ from services.product_service import ProductService
 from services.supplier_service import SupplierService
 from services.inventory_services import InventoryService
 from services.order_service import OrderService
+from exceptions.business import NotFoundError, ValidationError, ConflictError
 
 
 @pytest.fixture
@@ -62,7 +63,7 @@ def test_create_order(order_context, db_session: Session):
 def test_create_order_invalid_supplier(order_context):
     service = order_context["orders"]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NotFoundError):
         service.create_order(-1)
 
 
@@ -119,7 +120,7 @@ def test_add_item_invalid_quantity(order_context, db_session, quantity):
     order = service.create_order(order_context["supplier"].id)
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         service.add_item(order.id, "ORD-LAPTOP-001", quantity)
 
 
@@ -129,7 +130,7 @@ def test_add_item_unknown_product(order_context, db_session: Session):
     order = service.create_order(order_context["supplier"].id)
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(NotFoundError):
         service.add_item(order.id, "UNKNOWN-SKU", 2)
 
 
@@ -145,7 +146,7 @@ def test_add_item_unrelated_supplier(order_context, db_session: Session):
     order = service.create_order(order_context["supplier"].id)
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.add_item(order.id, "ORD-KEYBOARD-001", 2)
 
 
@@ -158,7 +159,7 @@ def test_add_duplicate_item(order_context, db_session: Session):
     service.add_item(order.id, "ORD-LAPTOP-001", 2)
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.add_item(order.id, "ORD-LAPTOP-001", 3)
 
 
@@ -200,7 +201,7 @@ def test_complete_empty_order(order_context, db_session: Session):
     order = service.create_order(order_context["supplier"].id)
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.complete_order(order.id)
 
     assert order.status == "pending"
@@ -219,7 +220,7 @@ def test_complete_order_twice(order_context, db_session: Session):
     service.complete_order(order.id)
     db_session.flush()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.complete_order(order.id)
 
     assert inventory.get_stock("ORD-LAPTOP-001") == 5
@@ -250,7 +251,7 @@ def test_cancel_order_twice(order_context, db_session: Session):
 
     service.cancel_order(order.id)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.cancel_order(order.id)
 
 
@@ -265,7 +266,7 @@ def test_complete_cancelled_order(order_context, db_session: Session):
 
     service.cancel_order(order.id)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.complete_order(order.id)
 
 
@@ -280,7 +281,7 @@ def test_cancel_completed_order(order_context, db_session: Session):
 
     service.complete_order(order.id)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConflictError):
         service.cancel_order(order.id)
 
 def test_complete_order_atomicity(db_session: Session):
