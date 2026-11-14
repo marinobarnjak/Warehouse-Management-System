@@ -3,6 +3,8 @@ from models.product import Product
 from sqlalchemy import select
 from decimal import Decimal
 
+from exceptions.business import NotFoundError, ValidationError, ConflictError
+
 class ProductService():
 
     def __init__(self, session: Session) -> None:
@@ -18,13 +20,13 @@ class ProductService():
             name = name.strip()
             sku = sku.strip()
             if not name:
-                raise ValueError("Name cannot be empty")
+                raise ValidationError("Name cannot be empty")
             if not sku: 
-                raise ValueError("SKU cannot be empty")
+                raise ValidationError("SKU cannot be empty")
             if price <= 0: 
-                raise ValueError("Price must be greater than zero")
+                raise ValidationError("Price must be greater than zero")
             if min_stock < 0:
-                raise ValueError("Minimal stock cannot be a negative number")
+                raise ValidationError("Minimal stock cannot be a negative number")
 
             product = Product()
             product.name = name
@@ -44,6 +46,9 @@ class ProductService():
     def update_product(self, sku: str, new_name: str) -> Product | None:
         product = self.get_product(sku)
 
+        if not product:
+            raise NotFoundError("Product cannot be found")
+
         if product:
             product.name = new_name
             return product
@@ -53,6 +58,9 @@ class ProductService():
 
     def delete_product(self, sku: str) -> bool:
         product = self.get_product(sku)
+
+        if not product:
+            raise NotFoundError("Product cannot be found")
 
         if not product:
             return False
