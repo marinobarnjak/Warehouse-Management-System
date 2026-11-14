@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from api.routers.products import router as product_router
 from api.routers.inventory import router as inventory_router
 from api.routers.suppliers import router as supplier_router
+from api.routers.orders import router as order_router
 
 app = FastAPI()
 app.title="Warehouse Managment System"
@@ -13,3 +14,4 @@ def root():
 app.include_router(product_router)
 app.include_router(inventory_router)
 app.include_router(supplier_router)
+app.include_router(order_router)

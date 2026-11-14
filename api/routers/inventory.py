@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from requests import Response 
 
 from api.dependecies import get_db
 from services.inventory_services import InventoryService
