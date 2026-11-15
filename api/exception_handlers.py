@@ -19,7 +19,7 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
 
     code = exc.orig.sqlstate
 
-    if code == "23500": 
+    if code == "23505": 
         return JSONResponse(content={"detail": "Resource already exist"}, status_code=409)
 
     if code == "23503":

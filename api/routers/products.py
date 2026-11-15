@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from api.dependecies import get_db, get_transactional_db
+from api.dependencies import get_db, get_transactional_db
 from services.product_service import ProductService
 from schemas.product import ProductResponse, ProductCreate, ProductUpdate
 from exceptions.business import NotFoundError

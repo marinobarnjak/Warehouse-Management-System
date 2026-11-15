@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from api.dependecies import get_db, get_transactional_db
+from api.dependencies import get_db, get_transactional_db
 from schemas.product import ProductResponse
 from services.supplier_service import SupplierService
 from schemas.supplier import SupplierCreate, SupplierResponse, SupplierAddProduct

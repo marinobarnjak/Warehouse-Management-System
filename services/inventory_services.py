@@ -74,7 +74,7 @@ class InventoryService():
 
         return product.quantity < product.min_stock
 
-    def get_low_stock_products(self) -> list[StockMovement]:
+    def get_low_stock_products(self) -> list[Product]:
         stmt = select(Product).where(Product.quantity < Product.min_stock)
 
         return self.session.scalars(stmt).all()
