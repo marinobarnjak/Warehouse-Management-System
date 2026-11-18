@@ -9,8 +9,14 @@ from exceptions.business import ValidationError, NotFoundError, ConflictError
 from api.exception_handlers import conflict_handler, not_found_handler, validation_handler, integrity_error_handler
 from sqlalchemy.exc import IntegrityError
 
+from core.logging_config import setup_logging
+import logging
+
 app = FastAPI()
 app.title="Warehouse Managment System"
+setup_logging()
+logger = logging.getLogger("wms")
+logger.info("WMS application started")
 
 app.add_exception_handler(NotFoundError, not_found_handler)
 app.add_exception_handler(ValidationError, validation_handler)
