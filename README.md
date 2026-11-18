@@ -73,7 +73,7 @@ Warehouse-Managment-System/
 │   │   ├── orders.py
 │   │   ├── products.py
 │   │   └── suppliers.py
-│   ├── dependecies.py
+│   ├── dependencies.py
 │   └── exception_handlers.py
 ├── database/
 │   ├── base.py
