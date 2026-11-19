@@ -36,6 +36,7 @@ class ProductService():
             product.min_stock = min_stock
             
             self.session.add(product)
+            self.session.info.setdefault("log_events",[]).append(f"Product created SKU={sku}")
             return product
 
     def get_all_products(self) -> list[Product]:

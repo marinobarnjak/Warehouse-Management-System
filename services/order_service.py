@@ -22,6 +22,8 @@ class OrderService():
         order.supplier = supplier
 
         self.session.add(order)
+        self.session.flush()
+        self.session.info.setdefault("log_events", []).append(f"Order created: order_id={order.id}, supplier_id={supplier.id}")
         return order
 
     def get_order(self, order_id: int) -> Order | None:
@@ -103,6 +105,8 @@ class OrderService():
 
         order.status = "completed"
 
+        self.session.info.setdefault("log_events", []).append(f"Order completed: order_id={order.id}, total_price={order.total_price}")
+
         return order
 
     def cancel_order(self, order_id : int) -> Order:
@@ -115,6 +119,8 @@ class OrderService():
             raise ConflictError("Only pending orders can be cancelled")
 
         order.status = "cancelled"
+
+        self.session.info.setdefault("log_events", []).append(f"Order cancelled: order_id={order.id}")
 
         return order
         

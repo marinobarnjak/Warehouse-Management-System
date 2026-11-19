@@ -5,6 +5,10 @@ from services.product_service import ProductService
 from models.stock_movement import StockMovement
 from exceptions.business import NotFoundError, ValidationError, ConflictError
 
+import logging
+
+logger = logging.getLogger("wms.inventory")
+
 class InventoryService():
 
     def __init__(self, session: Session, product: ProductService) -> None:
@@ -29,6 +33,10 @@ class InventoryService():
         stock_movement.quantity = quantity
         stock_movement.product = product
 
+        self.session.info.setdefault("log_events", []).append(
+            f"Stock received: SKU={sku}, quantity={quantity}, new_stock={stock_movement.quantity}"
+            )
+
         self.session.add(stock_movement)
 
         return stock_movement
@@ -45,6 +53,11 @@ class InventoryService():
             raise NotFoundError("Product with given SKU does not exist")
 
         if quantity > product.quantity:
+            logger.warning("Insufficient stock: SKU=%s requested=%s available=%s",
+                           sku,
+                           quantity,
+                           product.quantity
+                    )
             raise ConflictError("Insufficient stock")
 
         product.quantity -= quantity
@@ -53,7 +66,11 @@ class InventoryService():
         stock_movement.movement_type = "OUT" 
         stock_movement.quantity = quantity
         stock_movement.product = product
-        
+
+        self.session.info.setdefault("log_events", []).append(
+            f"Stock issued: SKU={sku}, quantity={quantity}, new_stock={stock_movement.quantity}"
+            )
+
         self.session.add(stock_movement)
         
         return stock_movement
