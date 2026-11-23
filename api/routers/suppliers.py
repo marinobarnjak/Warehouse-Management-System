@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+import math
 
 from api.dependencies import get_db, get_transactional_db
 from schemas.product import ProductResponse
 from services.supplier_service import SupplierService
 from schemas.supplier import SupplierCreate, SupplierResponse, SupplierAddProduct
 from exceptions.business import NotFoundError
+from schemas.pagination import PaginatedResponse
 
 router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 
@@ -25,9 +27,21 @@ def create_supplier(supplier_create: SupplierCreate, session: Session = Depends(
     return SupplierResponse.model_validate(created_supplier)
 
 @router.get("/", response_model=list[SupplierResponse])
-def get_all_suppliers(session: Session = Depends(get_db)):
+def get_all_suppliers(
+    page: int = Query(1, gt=0), 
+    page_size: int = Query(10, ge=1, le=100), 
+    search: str = Query(default=None, max_length=100),
+    session: Session = Depends(get_db)
+    ):
 
-    return SupplierService(session).get_all_suppliers()
+    suppliers, total = SupplierService(session).get_all_suppliers(page, page_size, search)
+    return PaginatedResponse[SupplierResponse](
+        items=suppliers,
+        total=total, 
+        page=page, 
+        page_size=page_size, 
+        total_pages=math.ceil(total / page_size)
+    )
 
 @router.get("/{id}", response_model=SupplierResponse)
 def get_supplier(id: int, session: Session = Depends(get_db)):

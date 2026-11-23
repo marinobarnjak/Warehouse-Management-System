@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends
+import math
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db, get_transactional_db
+from schemas.pagination import PaginatedResponse
 from services.order_service import OrderService
 from schemas.order import OrderCreate, OrderItemCreate, OrderResponse, OrderItemResponse
 from exceptions.business import NotFoundError
@@ -20,9 +23,23 @@ def create_order(order_create: OrderCreate, session: Session = Depends(get_trans
     return OrderResponse.model_validate(order)
 
 @router.get("/", response_model=list[OrderResponse])
-def get_all_orders(session: Session = Depends(get_db)):
+def get_all_orders(
+    page: int = Query(1, gt=0), 
+    page_size: int = Query(10, ge=1, le=100), 
+    status: str = Query(default=None, max_length=10),
+    supplier_id: int | None = None,
+    session: Session = Depends(get_db)
+    ):
     
-    return OrderService(session).get_all_orders()
+    orders, total = OrderService(session).get_all_orders(page, page_size, status, supplier_id)
+   
+    return PaginatedResponse[OrderResponse](
+        items=orders, 
+        total=total, 
+        page=page, 
+        page_size=page_size, 
+        total_pages=math.ceil(total / page_size)
+       )
 
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order(order_id: int, session: Session = Depends(get_db)):

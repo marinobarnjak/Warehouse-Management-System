@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from models.product import Product
-from sqlalchemy import select
+from sqlalchemy import select, or_, func
 from decimal import Decimal
 
 from exceptions.business import NotFoundError, ValidationError, ConflictError
@@ -39,10 +39,36 @@ class ProductService():
             self.session.info.setdefault("log_events",[]).append(f"Product created SKU={sku}")
             return product
 
-    def get_all_products(self) -> list[Product]:
+    def get_all_products(
+            self,
+            page: int = 1, 
+            page_size: int = 10, 
+            search: str | None = None, 
+            low_stock: bool = False
+            ) -> tuple[list[Product], int]:
+        
+        offset = (page-1) * page_size
         stmt = select(Product)
 
-        return self.session.scalars(stmt).all()
+        if search: 
+            stmt = stmt.where(
+                or_(
+                    Product.name.ilike(f"%{search}%"), 
+                    Product.sku.ilike(f"%{search}%")
+                    )
+                )
+
+        if low_stock:
+            stmt = stmt.where(Product.quantity <= Product.min_stock)
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.session.scalar(count_stmt) or 0
+
+        stmt = stmt.order_by(Product.id).limit(page_size).offset(offset)
+
+        products = self.session.scalars(stmt).all()
+
+        return products, total
         
     def update_product(self, sku: str, new_name: str) -> Product | None:
         product = self.get_product(sku)

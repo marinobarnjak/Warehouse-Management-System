@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, selectinload
 from models.order import Order
-from sqlalchemy import select, desc
+from sqlalchemy import func, select
 from services.supplier_service import SupplierService
 from models.order_item import OrderItem
 from services.product_service import ProductService
@@ -31,10 +31,35 @@ class OrderService():
 
         return self.session.scalar(stmt)
 
-    def get_all_orders(self) -> list[Order]:
-        stmt = select(Order).options(selectinload(Order.items)).order_by(desc(Order.created_at))
+    def get_all_orders(
+            self,
+            page: int = 1, 
+            page_size: int = 10, 
+            status: str | None = None,
+            supplier_id: int | None = None
+            ) -> tuple[list[Order], int]:
 
-        return self.session.scalars(stmt)
+        offset = (page-1) * page_size
+        stmt = select(Order).options(selectinload(Order.items))
+
+        if status:
+            stmt = stmt.where(
+                Order.status == status
+            )
+
+        if supplier_id: 
+            stmt = stmt.where(
+                Order.supplier_id == supplier_id
+            )
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.session.scalar(count_stmt) or 0
+        
+        stmt = stmt.order_by(Order.id.desc()).limit(page_size).offset(offset)  
+
+        orders = self.session.scalars(stmt).all()
+        
+        return orders, total
 
     def add_item(self, order_id: int, sku: str, quantity: int) -> OrderItem:
         order = self.get_order(order_id)

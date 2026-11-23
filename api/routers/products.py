@@ -1,16 +1,34 @@
-from fastapi import APIRouter, Depends
+import math
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db, get_transactional_db
 from services.product_service import ProductService
 from schemas.product import ProductResponse, ProductCreate, ProductUpdate
+from schemas.pagination import PaginatedResponse
 from exceptions.business import NotFoundError
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
-@router.get("/", response_model=list[ProductResponse])
-def products(session: Session = Depends(get_db)):
-    return ProductService(session).get_all_products()
+@router.get("/", response_model=PaginatedResponse[ProductResponse])
+def get_products(
+    page: int = Query(1, gt=0), 
+    page_size: int = Query(10, ge=1, le=100), 
+    search: str = Query(default=None, max_length=100),
+    low_stock: bool = False,
+    session: Session = Depends(get_db)
+    ):
+
+    products, total = ProductService(session).get_all_products(page, page_size, search, low_stock)
+
+    return PaginatedResponse[ProductResponse](
+        items=products, 
+        total=total, 
+        page=page, 
+        page_size=page_size, 
+        total_pages=math.ceil(total / page_size)
+    )
+
 
 @router.post("/", status_code = 201, response_model=ProductResponse)
 def create_product(product: ProductCreate, session: Session = Depends(get_transactional_db, scope="function")):
