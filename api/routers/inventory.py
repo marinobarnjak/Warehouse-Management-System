@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends
+import math
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from api.dependencies import get_db, get_transactional_db
+from schemas.pagination import PaginatedResponse
 from services.inventory_services import InventoryService
 from services.product_service import ProductService
 from schemas.inventory import StockMovementCreate, StockMovementResponse
@@ -55,9 +59,21 @@ def get_low_stock_products(session: Session = Depends(get_db)):
 
     return inventory_service.get_low_stock_products()
 
-@router.get("/movements", response_model=list[StockMovementResponse])
-def get_all_movements(session: Session = Depends(get_db)):
-    product_service = ProductService(session)
-    inventory_service = InventoryService(session, product_service)
+@router.get("/movements", response_model=PaginatedResponse[StockMovementResponse])
+def get_all_movements(
+    page: int = Query(1, gt=0), 
+    page_size: int = Query(10, ge=1, le=100), 
+    sku: str = Query(default=None, max_length=100),
+    movement_type: Literal["IN", "OUT"] | None = None,
+    session: Session = Depends(get_db)
+    ):
 
-    return inventory_service.get_all_movements()
+    movements, total = InventoryService(session).get_all_movements(page, page_size, sku, movement_type)
+   
+    return PaginatedResponse[StockMovementResponse](
+        items=movements, 
+        total=total, 
+        page=page, 
+        page_size=page_size, 
+        total_pages=math.ceil(total / page_size)
+       )

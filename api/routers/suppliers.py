@@ -26,7 +26,7 @@ def create_supplier(supplier_create: SupplierCreate, session: Session = Depends(
 
     return SupplierResponse.model_validate(created_supplier)
 
-@router.get("/", response_model=list[SupplierResponse])
+@router.get("/", response_model=PaginatedResponse[SupplierResponse])
 def get_all_suppliers(
     page: int = Query(1, gt=0), 
     page_size: int = Query(10, ge=1, le=100), 

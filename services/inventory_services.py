@@ -1,4 +1,4 @@
-from sqlalchemy import select, desc
+from sqlalchemy import func, select, desc
 from sqlalchemy.orm import Session
 from models.product import Product
 from services.product_service import ProductService
@@ -96,8 +96,33 @@ class InventoryService():
 
         return self.session.scalars(stmt).all()
 
-    def get_all_movements(self) -> list[StockMovement]:
+    def get_all_movements(
+            self,
+            page: int = 1, 
+            page_size: int = 10, 
+            sku: str | None = None,
+            movement_type: str | None = None
+            ) -> tuple[list[StockMovement], int]:
 
-        stmt = select(StockMovement).order_by(desc(StockMovement.created_at))
+        offset = (page-1) * page_size
+        stmt = select(StockMovement)
 
-        return self.session.scalars(stmt).all()
+        if sku: 
+            stmt = stmt.join(Product, StockMovement.product_id == Product.id).where(
+                Product.sku == sku
+            )
+
+        if movement_type:
+            stmt = stmt.where(
+                StockMovement.movement_type == movement_type
+            )
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.session.scalar(count_stmt) or 0
+        
+        stmt = stmt.order_by(
+            StockMovement.created_at.desc(),
+            StockMovement.id.desc()).limit(page_size).offset(offset)  
+
+        movements = self.session.scalars(stmt).all()
+        
+        return movements, total

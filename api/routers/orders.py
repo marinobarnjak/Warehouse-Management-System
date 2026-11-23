@@ -22,7 +22,7 @@ def create_order(order_create: OrderCreate, session: Session = Depends(get_trans
 
     return OrderResponse.model_validate(order)
 
-@router.get("/", response_model=list[OrderResponse])
+@router.get("/", response_model=PaginatedResponse[OrderResponse])
 def get_all_orders(
     page: int = Query(1, gt=0), 
     page_size: int = Query(10, ge=1, le=100), 
